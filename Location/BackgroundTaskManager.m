@@ -32,36 +32,56 @@
     return self;
 }
 
--(UIBackgroundTaskIdentifier)beginNewBackgroundTask{
-    UIApplication* application = [UIApplication sharedApplication];
-    
-    UIBackgroundTaskIdentifier bgTaskId = UIBackgroundTaskInvalid;
-    if([application respondsToSelector:@selector(beginBackgroundTaskWithExpirationHandler:)]){
+-(UIBackgroundTaskIdentifier)beginNewBackgroundTask
+{
+   UIApplication* application = [UIApplication sharedApplication];
+
+   UIBackgroundTaskIdentifier bgTaskId = UIBackgroundTaskInvalid;
+   if([application respondsToSelector:@selector(beginBackgroundTaskWithExpirationHandler:)]){
         bgTaskId = [application beginBackgroundTaskWithExpirationHandler:^{
-            [self drainBGTaskList];
-            [application endBackgroundTask:bgTaskId];
+           NSLog(@"background task %d expired", bgTaskId);
         }];
-        
+
         //add this id to our list
         [self.bgTaskIdList addObject:@(bgTaskId)];
-    }
-    
-    return bgTaskId;
+        [self endBackgroundTasks];
+   }
+
+   return bgTaskId;
 }
 
--(void)drainBGTaskList{
-    //mark end of each of our background task
-    UIApplication* application = [UIApplication sharedApplication];
-    if([application respondsToSelector:@selector(endBackgroundTask:)]){
-        for(NSNumber* bgTaskNum in self.bgTaskIdList){
-            UIBackgroundTaskIdentifier bgTaskId = [bgTaskNum integerValue];
-            NSLog(@"ending background task with id -%d", bgTaskId);
-            [application endBackgroundTask:bgTaskId];
-        }
-        
-        //remove all the object from the list
-        [self.bgTaskIdList removeAllObjects];
-    }
+-(void)endBackgroundTasks
+{
+   [self drainBGTaskList:NO];
+}
+
+-(void)endAllBackgroundTasks
+{
+   [self drainBGTaskList:YES];
+}
+
+-(void)drainBGTaskList:(BOOL)all
+{
+   //mark end of each of our background task
+   UIApplication* application = [UIApplication sharedApplication];
+   if([application respondsToSelector:@selector(endBackgroundTask:)]){
+      NSUInteger count=self.bgTaskIdList.count;
+      for ( NSUInteger i=(all?0:1); i<count; i++ )
+      {
+         UIBackgroundTaskIdentifier bgTaskId = [[self.bgTaskIdList objectAtIndex:0] integerValue];
+         NSLog(@"ending background task with id -%d", bgTaskId);
+         [application endBackgroundTask:bgTaskId];
+         [self.bgTaskIdList removeObjectAtIndex:0];
+      }
+      if ( self.bgTaskIdList.count > 0 )
+      {
+         NSLog(@"kept background task id %@", [self.bgTaskIdList objectAtIndex:0]);
+      }
+      else
+      {
+         NSLog(@"no more background tasks running");
+      }
+   }
 }
 
 @end
