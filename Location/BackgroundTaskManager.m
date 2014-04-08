@@ -87,7 +87,7 @@
       {
          NSLog(@"kept background task id %@", [self.bgTaskIdList objectAtIndex:0]);
       }
-      if ( cleanup )
+      if ( all )
       {
          NSLog(@"no more background tasks running");
          [application endBackgroundTask:self.masterTaskId];
