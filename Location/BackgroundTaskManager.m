@@ -9,6 +9,7 @@
 
 @interface BackgroundTaskManager()
 @property (nonatomic, strong)NSMutableArray* bgTaskIdList;
+@property (assign) UIBackgroundTaskIdentifier masterTaskId;
 @end
 
 @implementation BackgroundTaskManager
@@ -27,6 +28,7 @@
     self = [super init];
     if(self){
         _bgTaskIdList = [NSMutableArray array];
+        masterTaskId = UIBackgroundTaskInvalid;
     }
     
     return self;
@@ -41,10 +43,18 @@
         bgTaskId = [application beginBackgroundTaskWithExpirationHandler:^{
            NSLog(@"background task %d expired", bgTaskId);
         }];
-
-        //add this id to our list
-        [self.bgTaskIdList addObject:@(bgTaskId)];
-        [self endBackgroundTasks];
+        if ( self.masterTaskId == UIBackgroundTaskInvalid )
+        {
+            self.masterTaskId = bgTaskId;
+            NSLog(@"started master task %d", self.masterTaskId);
+        }
+        else
+        {
+            //add this id to our list
+            NSLog(@"started background task %d", bgTaskId);
+            [self.bgTaskIdList addObject:@(bgTaskId)];
+            [self endBackgroundTasks];
+        }
    }
 
    return bgTaskId;
@@ -77,9 +87,15 @@
       {
          NSLog(@"kept background task id %@", [self.bgTaskIdList objectAtIndex:0]);
       }
-      else
+      if ( cleanup )
       {
          NSLog(@"no more background tasks running");
+         [application endBackgroundTask:self.masterTaskId];
+         self.masterTaskId = UIBackgroundTaskInvalid;
+      }
+      else
+      {
+          NSLog(@"kept master background task id %d", self.masterTaskId);
       }
    }
 }
