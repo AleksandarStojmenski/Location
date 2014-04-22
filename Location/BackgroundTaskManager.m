@@ -28,7 +28,7 @@
     self = [super init];
     if(self){
         _bgTaskIdList = [NSMutableArray array];
-        masterTaskId = UIBackgroundTaskInvalid;
+        _masterTaskId = UIBackgroundTaskInvalid;
     }
     
     return self;
